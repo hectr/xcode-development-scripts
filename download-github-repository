@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Prepare environment
+################################################################################
+
+function usage() {
+    local -r script="${1}"
+    local -r argument="${2}"
+
+    echo >&2 -e "Invalid argument: ${argument}"
+    echo >&2 -e "Usage: ${script} [--repository=<repository_fullname>] [--output_directory=<output_directory>] [--strip_components=<number_of_directory_components_removed_on_extraction>] [--debug]"
+    exit "${LINENO}"
+}
+
+# exit immediately when a command fails
+set -Eeo pipefail
+
+# treat unset variables as an error
+set -u
+
+readonly scripts_path="$( cd "$(dirname "${0}")" ; pwd -P )"
+readonly root_directory="$( "${scripts_path}/root-directory-path" )"
+
+################################################################################
+# Parse arguments
+################################################################################
+
+repository="hectr/xcode-development-scripts"
+output_directory="${root_directory}/Vendor/Scripts"
+strip_components="1"
+
+for argument in "$@"; do
+    if [[ "--debug" == "${argument}" ]]; then set -x
+        
+    elif [[ "${argument}" == "--repository="* ]]; then repository="${argument#--repository=*}"
+    
+    elif [[ "${argument}" == "--output_directory="* ]]; then output_directory="$( realpath "${argument#--output_directory=*}" )"
+        
+    elif [[ "${argument}" == "--strip_components="* ]]; then strip_components="$( realpath "${argument#--strip_components=*}" )"
+    
+    else usage "${0}" "${argument}"; fi
+done
+
+################################################################################
+# Execute
+################################################################################
+
+mkdir -p "${output_directory}"
+
+readonly url="https://api.github.com/repos/${repository}/tarball"
+
+curl -L "${url}" | tar xz --strip-components="${strip_components}" -C "${output_directory}"

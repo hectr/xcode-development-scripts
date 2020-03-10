@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Prepare environment
+################################################################################
+
+# exit immediately when a command fails
+set -Eeo pipefail
+
+# treat unset variables as an error
+set -u
+
+################################################################################
+# Parse arguments
+################################################################################
+
+if test "$#" -ne 1; then
+    echo >&2 "Usage: ${0} <name_of_the_file_that_has_the_commit_message>"
+    exit "${LINENO}"
+fi
+
+readonly commit_description="${1}"
+
+################################################################################
+# Execute
+################################################################################
+
+readonly branch_full_name="$(git symbolic-ref --short HEAD)"
+
+# exit if it is not a slashed branch with an issue identifier
+[[ ${branch_full_name} =~ /[a-zA-Z]+[-_][0-9]+(-|_|$) ]] || exit 0
+
+readonly branch_short_name="${branch_full_name##*/}"
+readonly branch_description="$(echo "${branch_short_name}" | sed -E 's/^[a-zA-Z]+[-_][0-9]+//')"
+readonly issue_identifier="${branch_short_name%"${branch_description}"}"
+readonly issue_prefix="[${issue_identifier}]"
+readonly escaped_issue_prefix="\[${issue_identifier}\]"
+readonly is_issue_in_commit="$(grep -c "${escaped_issue_prefix}" "${commit_description}")"
+
+if [ -n "${issue_identifier}" ] && ! [[ "${is_issue_in_commit}" -ge 1 ]]; then
+  sed -i.bak -e "1s/^/${issue_prefix} /" "${commit_description}"
+fi
+
+exit 0

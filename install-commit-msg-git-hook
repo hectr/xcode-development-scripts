@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Prepare environment
+################################################################################
+
+function usage() {
+	local -r script="${1}"
+	local -r argument="${2}"
+
+	echo >&2 -e "Invalid argument: ${argument}"
+	echo >&2 -e "Usage: ${script} [--script_path=<commit_msg_script_path>] [--root_directory=<repository_root_path>] [--debug]"
+	exit "${LINENO}"
+}
+
+# exit immediately when a command fails
+set -Eeo pipefail
+
+# treat unset variables as an error
+set -u
+
+readonly scripts_path="$( cd "$(dirname "${0}")" ; pwd -P )"
+
+################################################################################
+# Parse arguments
+################################################################################
+
+script_path="${scripts_path}/hooks/prepend_branch_issue_id_to_commit_message/commit-msg"
+root_directory="$( "${scripts_path}/root-directory-path" )"
+
+for argument in "$@"; do
+	if [[ "--debug" == "${argument}" ]]; then set -x
+	
+	elif [[ "${argument}" == "--script_path="* ]]; then script_path="$( realpath "${argument#--script_path=*}" )"
+	
+	elif [[ "${argument}" == "--root_directory="* ]]; then root_directory="$( realpath "${argument#--root_directory=*}" )"
+	
+	else usage "${0}" "${argument}"; fi
+done
+
+################################################################################
+# Execute
+################################################################################
+
+readonly hooks_path="${root_directory}/.git/hooks"
+cp "${script_path}" "${hooks_path}/"

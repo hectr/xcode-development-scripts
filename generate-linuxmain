@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Prepare environment
+################################################################################
+
+function usage() {
+    local -r script="${1}"
+    local -r argument="${2}"
+
+    echo >&2 -e "Invalid argument: ${argument}"
+    echo >&2 -e "Usage: ${script} [--package_path=<root_manifest_path>] [--debug]"
+    exit "${LINENO}"
+}
+
+# exit immediately when a command fails
+set -Eeo pipefail
+
+# treat unset variables as an error
+set -u
+
+readonly scripts_path="$( cd "$(dirname "${0}")" ; pwd -P )"
+
+################################################################################
+# Parse arguments
+################################################################################
+
+root_manifest_path="$( "${scripts_path}/root-directory-path" )"
+
+for argument in "$@"; do
+    if [[ "${argument}" == "--debug" ]]; then set -x
+
+    elif [[ "${argument}" == "--package_path="* ]]; then root_manifest_path="$( realpath "${argument#--package_path=*}" )"
+
+    else usage "${0}" "${argument}"; fi
+done
+
+################################################################################
+# Execute
+################################################################################
+
+cd "${root_manifest_path}"
+
+swift test --generate-linuxmain

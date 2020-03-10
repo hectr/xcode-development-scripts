@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Prepare environment
+################################################################################
+
+function usage() {
+  local -r script="${1}"
+  local -r argument="${2}"
+
+  echo >&2 -e "Invalid argument: ${argument}"
+  echo >&2 -e "Usage: ${script} [--snapshots_dirname=<snapshots_directories_name>] [--tests_path=<tests_path>] [--debug]"
+  exit "${LINENO}"
+}
+
+# exit immediately when a command fails
+set -Eeo pipefail
+
+# treat unset variables as an error
+set -u
+
+readonly scripts_path="$( cd "$(dirname "${0}")" ; pwd -P )"
+
+################################################################################
+# Parse arguments
+################################################################################
+
+tests_path="$( "${scripts_path}/root-directory-path" )"
+snapshots_directory="__Snapshots__"
+
+for argument in "$@"; do
+  if [[ "${argument}" == "--debug" ]]; then set -x
+
+  elif [[ "${argument}" == "--tests_path="* ]]; then tests_path="$( realpath "${argument#--tests_path=*}" )"
+
+  elif [[ "${argument}" == "--snapshots_dirname="* ]]; then snapshots_directory="${argument#--snapshots_dirname=*}"
+
+  else usage "${0}" "${argument}"; fi
+done
+
+################################################################################
+# Execute
+################################################################################
+
+cd "${tests_path}"
+
+readonly directories="$(find . -type d)"
+while IFS= read -r dir; do
+  if [[ "${dir}" != *"${snapshots_directory}"* ]]; then
+    cd "${dir}"
+    if [ -d "./${snapshots_directory}" ]; then
+      find "./${snapshots_directory}" -name \*.png -type f -delete
+    fi
+    cd "${tests_path}"
+  fi
+done <<< "${directories}"

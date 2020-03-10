@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Prepare environment
+################################################################################
+
+function usage() {
+    local -r script="${1}"
+    local -r argument="${2}"
+
+    echo >&2 -e "Invalid argument: ${argument}"
+    echo >&2 -e "Usage: ${script} [--debug]"
+    exit "${LINENO}"
+}
+
+# exit immediately when a command fails
+set -Eeo pipefail
+
+# treat unset variables as an error
+set -u
+
+################################################################################
+# Parse arguments
+################################################################################
+
+for argument in "$@"; do
+    if [[ "${argument}" == "--debug" ]]; then set -x
+    
+    else usage "${0}" "${argument}"; fi
+done
+
+################################################################################
+# Execute
+################################################################################
+
+git rev-parse --show-toplevel

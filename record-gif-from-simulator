@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Prepare environment
+################################################################################
+
+function usage() {
+	local -r script="${1}"
+	local -r argument="${2}"
+
+	echo >&2 -e "Invalid argument: ${argument}"
+	echo >&2 -e "Usage: ${script} [--output_directory=<output_path>] [gif_filename=<output_filename>] [--debug]"
+	exit "${LINENO}"
+}
+
+# exit immediately when a command fails
+set -Eeo pipefail
+
+# treat unset variables as an error
+set -u
+
+readonly scripts_path="$( cd "$(dirname "${0}")" ; pwd -P )"
+
+################################################################################
+# Parse arguments
+################################################################################
+
+output_directory="$( "${scripts_path}/root-directory-path" )"
+gif_filename="ios-simulator.gif"
+
+for argument in "$@"; do
+	if [[ "${argument}" == "--debug" ]]; then set -x
+	
+	elif [[ "${argument}" == "--output_directory="* ]]; then output_directory="$( realpath "${argument#--output_directory=*}" )"
+	
+	elif [[ "${argument}" == "--gif_filename="* ]]; then gif_filename="${argument#--gif_filename=*}"
+	
+	else usage "${0}" "${argument}"; fi
+done
+
+################################################################################
+# Check environment
+################################################################################
+
+if ! command -v ffmpeg >/dev/null; then
+	echo -e "\n[✗] ffmpeg not installed, run: 'brew install ffmpeg'\n"
+	exit "${LINENO}"
+fi
+
+################################################################################
+# Execute
+################################################################################
+
+readonly output="${output_directory}/${gif_filename}"
+
+readonly temp_dir_path="$( mktemp -d )"
+cd "${temp_dir_path}"
+
+echo -e "[⚒] Recording video..."
+
+echo -e "\nPress Ctrl + C to stop the recording.\n"
+xcrun simctl io booted recordVideo --mask=black --force ios-simulator.mov
+
+echo " -> recording stopped"
+
+echo -e "\n[⚒] Resizing video...\n"
+ffmpeg -i ios-simulator.mov -vf "scale=ceil(iw*.25):ceil(ih*.25)" ios-simulator_small.mov
+
+echo -e "\n[⚒] Converting to gif...\n"
+ffmpeg -i ios-simulator_small.mov "${gif_filename}"
+
+if ! command -v convert >/dev/null; then
+	echo -e "\n[⚠] imagemagick not installed, run: 'brew install imagemagick'\n"
+else
+	echo -e "\n[⚒] Optimizing frame...\n"
+	convert "${gif_filename}" -verbose -coalesce -layers OptimizeFrame "${gif_filename}"
+fi
+
+if ! command -v gifsicle >/dev/null; then
+	echo -e "\n[⚠] gifsicle not installed, run: 'brew install gifsicle'\n"
+else
+	echo -e "\n[⚒] Optimizing...\n"
+	gifsicle -O2 "${gif_filename}" -o "${gif_filename}"
+fi
+
+mv "${gif_filename}" "${output}"
+
+echo -e "\n[✓] gif recorded: ${output}\n"
