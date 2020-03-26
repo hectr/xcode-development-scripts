@@ -57,7 +57,7 @@ readonly output="${output_directory}/${gif_filename}"
 readonly temp_dir_path="$( mktemp -d )"
 cd "${temp_dir_path}"
 
-echo -e "[⚒] Recording video..."
+echo -e "\n[⚒] Recording video..."
 
 echo -e "\nPress Ctrl + C to stop the recording.\n"
 xcrun simctl io booted recordVideo --mask=black --force ios-simulator.mov
@@ -65,7 +65,7 @@ xcrun simctl io booted recordVideo --mask=black --force ios-simulator.mov
 echo " -> recording stopped"
 
 echo -e "\n[⚒] Resizing video...\n"
-ffmpeg -i ios-simulator.mov -vf "scale=ceil(iw*.25):ceil(ih*.25)" ios-simulator_small.mov
+ffmpeg -i ios-simulator.mov -vf "scale=ceil(iw*.125)*2:ceil(ih*.125)*2" ios-simulator_small.mov
 
 echo -e "\n[⚒] Converting to gif...\n"
 ffmpeg -i ios-simulator_small.mov "${gif_filename}"
