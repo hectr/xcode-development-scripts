@@ -20,12 +20,13 @@ set -Eeo pipefail
 set -u
 
 readonly scripts_path="$( cd "$(dirname "${0}")" ; pwd -P )"
+readonly root_repository_path="$( cd "${scripts_path}"; git rev-parse --show-toplevel )"
 
 ################################################################################
 # Parse arguments
 ################################################################################
 
-output_directory="$( "${scripts_path}/root-directory-path" )"
+output_directory="${root_repository_path}"
 gif_filename="ios-simulator.gif"
 
 for argument in "$@"; do

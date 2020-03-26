@@ -20,13 +20,14 @@ set -Eeo pipefail
 set -u
 
 readonly scripts_path="$( cd "$(dirname "${0}")" ; pwd -P )"
+readonly root_repository_path="$( cd "${scripts_path}"; git rev-parse --show-toplevel )"
 
 ################################################################################
 # Parse arguments
 ################################################################################
 
 script_path="${scripts_path}/hooks/prepend_branch_issue_id_to_commit_message/commit-msg"
-root_directory="$( "${scripts_path}/root-directory-path" )"
+root_directory="${root_repository_path}"
 
 for argument in "$@"; do
 	if [[ "--debug" == "${argument}" ]]; then set -x

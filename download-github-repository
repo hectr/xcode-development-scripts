@@ -20,14 +20,14 @@ set -Eeo pipefail
 set -u
 
 readonly scripts_path="$( cd "$(dirname "${0}")" ; pwd -P )"
-readonly root_directory="$( "${scripts_path}/root-directory-path" )"
+readonly root_repository_path="$( cd "${scripts_path}"; git rev-parse --show-toplevel )"
 
 ################################################################################
 # Parse arguments
 ################################################################################
 
 repository="hectr/xcode-development-scripts"
-output_directory="${root_directory}/Vendor/Scripts"
+output_directory="${root_repository_path}/Vendor/Scripts"
 strip_components="1"
 
 for argument in "$@"; do
