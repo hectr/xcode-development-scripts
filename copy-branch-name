@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+# Source: https://github.com/hectr/xcode-development-scripts
+
+################################################################################
+# Prepare environment
+################################################################################
+
+function usage() {
+    local -r script="${1}"
+    local -r argument="${2}"
+
+    echo >&2 -e "Invalid argument: ${argument}"
+    echo >&2 -e "Usage: ${script} [--repository_path=<git_repository_path>] [--debug]"
+    exit "${LINENO}"
+}
+
+# exit immediately when a command fails
+set -Eeo pipefail
+
+# treat unset variables as an error
+set -u
+
+readonly scripts_path="$( cd "$(dirname "${0}")" ; pwd -P )"
+readonly root_repository_path="$( cd "${scripts_path}"; git rev-parse --show-toplevel )"
+
+################################################################################
+# Parse arguments
+################################################################################
+
+repository_path="${root_repository_path}"
+
+for argument in "$@"; do
+    if [[ "${argument}" == "--debug" ]]; then set -x
+
+    elif [[ "${argument}" == "--repository_path="* ]]; then repository_path="$( realpath "${argument#--repository_path=*}" )"
+
+    else usage "${0}" "${argument}"; fi
+done
+
+################################################################################
+# Execute
+################################################################################
+
+cd "${repository_path}"
+readonly branch_name="$( git rev-parse --abbrev-ref HEAD )"
+echo "${branch_name}" | tr -d '\n' | pbcopy
